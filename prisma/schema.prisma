@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ArtistProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String
+  shortBio        String?
+  bio             String?
+  statement       String?
+  email           String?
+  instagramUrl    String?
+  profileImageUrl String?
+  profileImageKey String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Project {
+  id           String         @id @default(uuid()) @db.Uuid
+  title        String
+  slug         String         @unique
+  subtitle     String?
+  description  String?
+  year         Int?
+  status       ProjectStatus  @default(DRAFT)
+  featured     Boolean        @default(false)
+  coverImageId String?        @unique @db.Uuid
+  coverImage   ProjectImage?  @relation("ProjectCoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
+  images       ProjectImage[] @relation("ProjectImages")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  publishedAt  DateTime?
+
+  @@index([status])
+  @@index([featured])
+}
+
+model ProjectImage {
+  id            String   @id @default(uuid()) @db.Uuid
+  projectId     String   @db.Uuid
+  project       Project  @relation("ProjectImages", fields: [projectId], references: [id], onDelete: Cascade)
+  coveredProject Project? @relation("ProjectCoverImage")
+  url           String
+  storageKey    String
+  originalName  String?
+  mimeType      String?
+  size          Int?
+  width         Int?
+  height        Int?
+  alt           String?
+  caption       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+}
