@@ -32,6 +32,8 @@ const publicProjectSelect = {
   subtitle: true,
   description: true,
   year: true,
+  price: true,
+  sizes: true,
   featured: true,
   publishedAt: true,
   coverImage: { select: imageSelect },
@@ -47,7 +49,11 @@ export class ProjectsService {
     return this.prisma.project.findMany({
       where: { status: ProjectStatus.PUBLISHED },
       select: publicProjectSelect,
-      orderBy: [{ featured: 'desc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { featured: 'desc' },
+        { publishedAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 
@@ -103,9 +109,12 @@ export class ProjectsService {
         subtitle: dto.subtitle,
         description: dto.description,
         year: dto.year,
+        price: dto.price,
+        sizes: dto.sizes,
         status: dto.status,
         featured: dto.featured,
-        publishedAt: dto.status === ProjectStatus.PUBLISHED ? new Date() : undefined,
+        publishedAt:
+          dto.status === ProjectStatus.PUBLISHED ? new Date() : undefined,
       },
     });
   }
@@ -127,6 +136,8 @@ export class ProjectsService {
           subtitle: dto.subtitle,
           description: dto.description,
           year: dto.year,
+          price: dto.price,
+          sizes: dto.sizes,
           status: dto.status,
           featured: dto.featured,
         },
