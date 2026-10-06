@@ -1,43 +1,23 @@
 import { useEffect, useState } from 'react';
-import {
-  fetchPublishedProject,
-  fetchPublishedProjects,
-} from './api/projects';
-import { ProductDetail } from './components/ProductDetail';
+import { fetchPublishedProjects } from './api/projects';
 import { ProjectsCarousel } from './components/ProjectsCarousel';
 import type { Project } from './types/project';
 
-type AppState =
+type ProjectsState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | {
-      status: 'ready';
-      projects: Project[];
-      product?: Project;
-    };
-
-function currentProductSlug() {
-  const match = window.location.pathname.match(/^\/projects\/([^/]+)\/?$/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
+  | { status: 'ready'; projects: Project[] };
 
 export default function App() {
-  const [state, setState] = useState<AppState>({ status: 'loading' });
+  const [state, setState] = useState<ProjectsState>({ status: 'loading' });
 
   useEffect(() => {
     let isMounted = true;
-    const slug = currentProductSlug();
 
-    const request = slug
-      ? Promise.all([fetchPublishedProjects(), fetchPublishedProject(slug)]).then(
-          ([projects, product]) => ({ projects, product }),
-        )
-      : fetchPublishedProjects().then((projects) => ({ projects }));
-
-    request
-      .then((data) => {
+    fetchPublishedProjects()
+      .then((projects) => {
         if (isMounted) {
-          setState({ status: 'ready', ...data });
+          setState({ status: 'ready', projects });
         }
       })
       .catch((error: unknown) => {
@@ -45,7 +25,7 @@ export default function App() {
           setState({
             status: 'error',
             message:
-              error instanceof Error ? error.message : 'Could not load products',
+              error instanceof Error ? error.message : 'Could not load projects',
           });
         }
       });
@@ -56,21 +36,15 @@ export default function App() {
   }, []);
 
   if (state.status === 'loading') {
-    return <main className="screen-state">Cargando...</main>;
+    return <main className="screen-state">Loading projects...</main>;
   }
 
   if (state.status === 'error') {
     return <main className="screen-state">{state.message}</main>;
   }
 
-  if (state.product) {
-    return (
-      <ProductDetail product={state.product} products={state.projects} />
-    );
-  }
-
   if (state.projects.length === 0) {
-    return <main className="screen-state">Todavía no hay productos publicados.</main>;
+    return <main className="screen-state">No published projects yet.</main>;
   }
 
   return <ProjectsCarousel projects={state.projects} />;
