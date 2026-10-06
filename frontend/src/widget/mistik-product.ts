@@ -277,6 +277,15 @@ const money = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 0,
 });
 
+function escapeHtml(value: string | number | null | undefined) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function joinProductUrl(baseUrl: string, slug: string) {
   const normalized = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   return `${normalized}${encodeURIComponent(slug)}`;
@@ -328,17 +337,17 @@ function uniqueImages(product: Product) {
 function renderCard(product: Product, baseUrl: string) {
   const image = product.coverImage;
   return `
-    <a class="card" href="${joinProductUrl(baseUrl, product.slug)}">
+    <a class="card" href="${escapeHtml(joinProductUrl(baseUrl, product.slug))}">
       <div class="card__image">
         ${
           image
-            ? `<img src="${image.url}" alt="${image.alt ?? product.title}">`
+            ? `<img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt ?? product.title)}">`
             : ''
         }
       </div>
       <div class="card__meta">
-        <span>${product.title}</span>
-        <span>${product.price === null ? 'Consultar' : money.format(product.price)}</span>
+        <span>${escapeHtml(product.title)}</span>
+        <span>${escapeHtml(product.price === null ? 'Consultar' : money.format(product.price))}</span>
       </div>
     </a>
   `;
@@ -388,13 +397,13 @@ async function mountProduct(element: HTMLElement) {
     root.innerHTML = `
       <style>${styles}</style>
       <article class="product">
-        <a class="back" href="${catalogUrl}">Volver a ver todos los productos</a>
+        <a class="back" href="${escapeHtml(catalogUrl)}">Volver a ver todos los productos</a>
 
         <section class="hero">
           <div class="gallery">
             ${
               images.length
-                ? `<img class="gallery__image" src="${images[0].url}" alt="${images[0].alt ?? product.title}">`
+                ? `<img class="gallery__image" src="${escapeHtml(images[0].url)}" alt="${escapeHtml(images[0].alt ?? product.title)}">`
                 : ''
             }
             ${
@@ -410,8 +419,8 @@ async function mountProduct(element: HTMLElement) {
           </div>
 
           <div class="info">
-            <h1>${product.title}</h1>
-            ${product.subtitle ? `<p class="subtitle">${product.subtitle}</p>` : ''}
+            <h1>${escapeHtml(product.title)}</h1>
+            ${product.subtitle ? `<p class="subtitle">${escapeHtml(product.subtitle)}</p>` : ''}
 
             ${
               product.sizes.length
@@ -426,7 +435,7 @@ async function mountProduct(element: HTMLElement) {
                             type="button"
                             data-size="${size}"
                             aria-pressed="${index === 0 ? 'true' : 'false'}"
-                          >${size}</button>
+                          >${escapeHtml(size)}</button>
                         `,
                       )
                       .join('')}
@@ -436,7 +445,7 @@ async function mountProduct(element: HTMLElement) {
             }
 
             <div class="buy">
-              <p class="price">${product.price === null ? 'Consultar' : money.format(product.price)}</p>
+              <p class="price">${escapeHtml(product.price === null ? 'Consultar' : money.format(product.price))}</p>
               <button class="add" type="button" ${
                 product.price === null ? 'disabled' : ''
               }>Agregar al carrito</button>
@@ -445,7 +454,7 @@ async function mountProduct(element: HTMLElement) {
           </div>
         </section>
 
-        ${product.description ? `<p class="description">${product.description}</p>` : ''}
+        ${product.description ? `<p class="description">${escapeHtml(product.description)}</p>` : ''}
 
         ${
           related.length
