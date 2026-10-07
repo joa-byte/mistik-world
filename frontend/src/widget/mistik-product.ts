@@ -17,7 +17,7 @@ type Product = {
 };
 
 type CartItem = {
-  projectId: string;
+  productId: string;
   slug: string;
   title: string;
   price: number | null;
@@ -303,7 +303,7 @@ function readCart(): CartItem[] {
 function addToCart(item: CartItem) {
   const cart = readCart();
   const existing = cart.find(
-    (entry) => entry.projectId === item.projectId && entry.size === item.size,
+    (entry) => entry.productId === item.productId && entry.size === item.size,
   );
 
   if (existing) {
@@ -370,8 +370,8 @@ async function mountProduct(element: HTMLElement) {
 
   try {
     const [productResponse, productsResponse] = await Promise.all([
-      fetch(`${apiUrl}/public/projects/${encodeURIComponent(slug)}`),
-      fetch(`${apiUrl}/public/projects`),
+      fetch(`${apiUrl}/public/products/${encodeURIComponent(slug)}`),
+      fetch(`${apiUrl}/public/products`),
     ]);
 
     if (!productResponse.ok) {
@@ -507,7 +507,7 @@ async function mountProduct(element: HTMLElement) {
     const added = root.querySelector<HTMLElement>('.added');
     root.querySelector<HTMLButtonElement>('.add')?.addEventListener('click', () => {
       addToCart({
-        projectId: product.id,
+        productId: product.id,
         slug: product.slug,
         title: product.title,
         price: product.price,
