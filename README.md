@@ -1,6 +1,6 @@
-# Artist Portfolio API
+# Mistik World API
 
-NestJS + Prisma + PostgreSQL backend for an artist portfolio with a small admin API.
+NestJS + Prisma + PostgreSQL backend for the Mistik World product catalog, plus an embeddable Readymag storefront widget.
 
 ## Local setup
 
@@ -32,15 +32,15 @@ http://localhost:5173
 
 - `POST /auth/login`
 - `GET /public/artist-profile`
-- `GET /public/projects`
-- `GET /public/projects/:slug`
+- `GET /public/products`
+- `GET /public/products/:slug`
 - `GET /admin/artist-profile`
 - `PATCH /admin/artist-profile`
-- `GET /admin/projects`
-- `POST /admin/projects`
-- `PATCH /admin/projects/:id/cover-image`
-- `GET /admin/projects/:projectId/images`
-- `POST /admin/projects/:projectId/images`
+- `GET /admin/products`
+- `POST /admin/products`
+- `PATCH /admin/products/:id/cover-image`
+- `GET /admin/products/:productId/images`
+- `POST /admin/products/:productId/images`
 
 ## Readymag product widget
 
@@ -81,3 +81,10 @@ Attributes:
 The widget renders the image gallery, title, short description, size selector, price, add-to-cart action, long description, and up to three related products. Shipping / postal-code calculation is intentionally not included.
 
 Cart items are stored in browser `localStorage` under `mistik-cart-v1`. Each add-to-cart action also dispatches a `mistik:cart-updated` browser event so a separate Readymag cart widget can react to changes later.
+
+
+## Product domain naming
+
+The application code uses `Product`, `ProductImage`, and `ProductStatus` throughout the backend and storefront APIs.
+
+To preserve existing database data without a destructive table rename, Prisma maps those models to the legacy PostgreSQL tables `Project`, `ProjectImage`, and enum `ProjectStatus`. This is intentional compatibility glue and can be removed later with an explicit production migration if desired.
