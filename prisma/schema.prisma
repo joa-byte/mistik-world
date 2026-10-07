@@ -44,7 +44,6 @@ model Product {
   slug         String         @unique
   subtitle     String?
   description  String?
-  year         Int?
   price        Int?
   sizes        Int[]          @default([])
   status       ProductStatus  @default(DRAFT)
