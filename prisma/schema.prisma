@@ -43,6 +43,8 @@ model Project {
   subtitle     String?
   description  String?
   year         Int?
+  price        Int?
+  sizes        Int[]          @default([])
   status       ProjectStatus  @default(DRAFT)
   featured     Boolean        @default(false)
   coverImageId String?        @unique @db.Uuid
@@ -57,21 +59,21 @@ model Project {
 }
 
 model ProjectImage {
-  id            String   @id @default(uuid()) @db.Uuid
-  projectId     String   @db.Uuid
-  project       Project  @relation("ProjectImages", fields: [projectId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid()) @db.Uuid
+  projectId      String   @db.Uuid
+  project        Project  @relation("ProjectImages", fields: [projectId], references: [id], onDelete: Cascade)
   coveredProject Project? @relation("ProjectCoverImage")
-  url           String
-  storageKey    String
-  originalName  String?
-  mimeType      String?
-  size          Int?
-  width         Int?
-  height        Int?
-  alt           String?
-  caption       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  url            String
+  storageKey     String
+  originalName   String?
+  mimeType       String?
+  size           Int?
+  width          Int?
+  height         Int?
+  alt            String?
+  caption        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([projectId])
 }
