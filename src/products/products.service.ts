@@ -4,12 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, ProjectStatus } from '@prisma/client';
+import { Prisma, ProductStatus } from '@prisma/client';
 import { createSlug } from '../common/utils/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProjectDto } from './dto/create-project.dto';
+import { CreateProductDto } from './dto/create-product.dto';
 import { SetCoverImageDto } from './dto/set-cover-image.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 const imageSelect = {
   id: true,
@@ -25,13 +25,12 @@ const imageSelect = {
   updatedAt: true,
 };
 
-const publicProjectSelect = {
+const publicProductSelect = {
   id: true,
   title: true,
   slug: true,
   subtitle: true,
   description: true,
-  year: true,
   price: true,
   sizes: true,
   featured: true,
@@ -42,13 +41,13 @@ const publicProjectSelect = {
 };
 
 @Injectable()
-export class ProjectsService {
+export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findPublicProjects() {
-    return this.prisma.project.findMany({
-      where: { status: ProjectStatus.PUBLISHED },
-      select: publicProjectSelect,
+  findPublicProducts() {
+    return this.prisma.product.findMany({
+      where: { status: ProductStatus.PUBLISHED },
+      select: publicProductSelect,
       orderBy: [
         { featured: 'desc' },
         { publishedAt: 'desc' },
@@ -57,24 +56,24 @@ export class ProjectsService {
     });
   }
 
-  async findPublicProjectBySlug(slug: string) {
-    const project = await this.prisma.project.findFirst({
-      where: { slug, status: ProjectStatus.PUBLISHED },
+  async findPublicProductBySlug(slug: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { slug, status: ProductStatus.PUBLISHED },
       select: {
-        ...publicProjectSelect,
+        ...publicProductSelect,
         images: { select: imageSelect, orderBy: { createdAt: 'asc' } },
       },
     });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
 
-    return project;
+    return product;
   }
 
-  findAdminProjects() {
-    return this.prisma.project.findMany({
+  findAdminProducts() {
+    return this.prisma.product.findMany({
       include: {
         coverImage: true,
         _count: { select: { images: true } },
@@ -83,8 +82,8 @@ export class ProjectsService {
     });
   }
 
-  async findAdminProjectById(id: string) {
-    const project = await this.prisma.project.findUnique({
+  async findAdminProductById(id: string) {
+    const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
         coverImage: true,
@@ -92,35 +91,34 @@ export class ProjectsService {
       },
     });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
 
-    return project;
+    return product;
   }
 
-  async create(dto: CreateProjectDto) {
+  async create(dto: CreateProductDto) {
     const slug = await this.resolveUniqueSlug(dto.slug ?? dto.title);
 
-    return this.prisma.project.create({
+    return this.prisma.product.create({
       data: {
         title: dto.title,
         slug,
         subtitle: dto.subtitle,
         description: dto.description,
-        year: dto.year,
         price: dto.price,
         sizes: dto.sizes,
         status: dto.status,
         featured: dto.featured,
         publishedAt:
-          dto.status === ProjectStatus.PUBLISHED ? new Date() : undefined,
+          dto.status === ProductStatus.PUBLISHED ? new Date() : undefined,
       },
     });
   }
 
-  async update(id: string, dto: UpdateProjectDto) {
-    await this.ensureProjectExists(id);
+  async update(id: string, dto: UpdateProductDto) {
+    await this.ensureProductExists(id);
 
     let slug: string | undefined;
     if (dto.slug || dto.title) {
@@ -128,14 +126,13 @@ export class ProjectsService {
     }
 
     try {
-      return await this.prisma.project.update({
+      return await this.prisma.product.update({
         where: { id },
         data: {
           title: dto.title,
           slug,
           subtitle: dto.subtitle,
           description: dto.description,
-          year: dto.year,
           price: dto.price,
           sizes: dto.sizes,
           status: dto.status,
@@ -148,79 +145,79 @@ export class ProjectsService {
   }
 
   async delete(id: string) {
-    await this.ensureProjectExists(id);
-    await this.prisma.project.delete({ where: { id } });
+    await this.ensureProductExists(id);
+    await this.prisma.product.delete({ where: { id } });
     return { deleted: true };
   }
 
   async publish(id: string) {
-    const project = await this.ensureProjectExists(id);
+    const product = await this.ensureProductExists(id);
 
-    return this.prisma.project.update({
+    return this.prisma.product.update({
       where: { id },
       data: {
-        status: ProjectStatus.PUBLISHED,
-        publishedAt: project.publishedAt ?? new Date(),
+        status: ProductStatus.PUBLISHED,
+        publishedAt: product.publishedAt ?? new Date(),
       },
     });
   }
 
   async archive(id: string) {
-    await this.ensureProjectExists(id);
+    await this.ensureProductExists(id);
 
-    return this.prisma.project.update({
+    return this.prisma.product.update({
       where: { id },
-      data: { status: ProjectStatus.ARCHIVED },
+      data: { status: ProductStatus.ARCHIVED },
     });
   }
 
   async setCoverImage(id: string, dto: SetCoverImageDto) {
-    await this.ensureProjectExists(id);
-    await this.ensureImageBelongsToProject(dto.coverImageId, id);
+    await this.ensureProductExists(id);
+    await this.ensureImageBelongsToProduct(dto.coverImageId, id);
 
-    return this.prisma.project.update({
+    return this.prisma.product.update({
       where: { id },
       data: { coverImageId: dto.coverImageId },
       include: { coverImage: true },
     });
   }
 
-  private async ensureProjectExists(id: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
+  private async ensureProductExists(id: string) {
+    const product = await this.prisma.product.findUnique({ where: { id } });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
 
-    return project;
+    return product;
   }
 
-  private async ensureImageBelongsToProject(imageId: string, projectId: string) {
-    const image = await this.prisma.projectImage.findUnique({
+  private async ensureImageBelongsToProduct(imageId: string, productId: string) {
+    const image = await this.prisma.productImage.findUnique({
       where: { id: imageId },
-      select: { id: true, projectId: true },
+      select: { id: true, productId: true },
     });
 
     if (!image) {
-      throw new NotFoundException('Project image not found');
+      throw new NotFoundException('Product image not found');
     }
 
-    if (image.projectId !== projectId) {
-      throw new BadRequestException('Cover image must belong to the project');
+    if (image.productId !== productId) {
+      throw new BadRequestException('Cover image must belong to the product');
     }
   }
 
-  private async resolveUniqueSlug(value: string, currentProjectId?: string) {
+  private async resolveUniqueSlug(value: string, currentProductId?: string) {
     const slug = createSlug(value);
 
     if (!slug) {
       throw new BadRequestException('Slug cannot be empty');
     }
 
-    const existing = await this.prisma.project.findUnique({ where: { slug } });
+    const existing = await this.prisma.product.findUnique({ where: { slug } });
 
-    if (existing && existing.id !== currentProjectId) {
-      throw new ConflictException('Project slug already exists');
+    if (existing && existing.id !== currentProductId) {
+      throw new ConflictException('Product slug already exists');
     }
 
     return slug;
@@ -231,7 +228,7 @@ export class ProjectsService {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      throw new ConflictException('Project slug already exists');
+      throw new ConflictException('Product slug already exists');
     }
 
     throw error;

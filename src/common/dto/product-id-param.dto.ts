@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsUUID } from 'class-validator';
 
-export class ProjectIdParamDto {
+export class ProductIdParamDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
-  projectId: string;
+  productId: string;
 }

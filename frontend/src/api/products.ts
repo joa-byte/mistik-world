@@ -1,4 +1,4 @@
-import type { Project } from '../types/project';
+import type { Product } from '../types/product';
 
 function getApiUrl() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -10,8 +10,8 @@ function getApiUrl() {
   return apiUrl;
 }
 
-export async function fetchPublishedProjects(): Promise<Project[]> {
-  const response = await fetch(`${getApiUrl()}/public/projects`);
+export async function fetchPublishedProducts(): Promise<Product[]> {
+  const response = await fetch(`${getApiUrl()}/public/products`);
 
   if (!response.ok) {
     throw new Error('Could not load products');
@@ -20,9 +20,9 @@ export async function fetchPublishedProjects(): Promise<Project[]> {
   return response.json();
 }
 
-export async function fetchPublishedProject(slug: string): Promise<Project> {
+export async function fetchPublishedProduct(slug: string): Promise<Product> {
   const response = await fetch(
-    `${getApiUrl()}/public/projects/${encodeURIComponent(slug)}`,
+    `${getApiUrl()}/public/products/${encodeURIComponent(slug)}`,
   );
 
   if (!response.ok) {

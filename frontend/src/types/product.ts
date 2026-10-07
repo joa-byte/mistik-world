@@ -1,18 +1,17 @@
-export type ProjectImage = {
+export type ProductImage = {
   id?: string;
   url: string;
   alt: string | null;
 };
 
-export type Project = {
+export type Product = {
   id: string;
   title: string;
   slug: string;
   subtitle: string | null;
   description: string | null;
-  year: number | null;
   price: number | null;
   sizes: number[];
-  coverImage: ProjectImage | null;
-  images?: ProjectImage[];
+  coverImage: ProductImage | null;
+  images?: ProductImage[];
 };

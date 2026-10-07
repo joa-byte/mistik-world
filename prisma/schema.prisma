@@ -7,10 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProjectStatus {
+enum ProductStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+
+  @@map("ProjectStatus")
 }
 
 model User {
@@ -36,33 +38,33 @@ model ArtistProfile {
   updatedAt       DateTime @updatedAt
 }
 
-model Project {
+model Product {
   id           String         @id @default(uuid()) @db.Uuid
   title        String
   slug         String         @unique
   subtitle     String?
   description  String?
-  year         Int?
   price        Int?
   sizes        Int[]          @default([])
-  status       ProjectStatus  @default(DRAFT)
+  status       ProductStatus  @default(DRAFT)
   featured     Boolean        @default(false)
   coverImageId String?        @unique @db.Uuid
-  coverImage   ProjectImage?  @relation("ProjectCoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
-  images       ProjectImage[] @relation("ProjectImages")
+  coverImage   ProductImage?  @relation("ProductCoverImage", fields: [coverImageId], references: [id], onDelete: SetNull)
+  images       ProductImage[] @relation("ProductImages")
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   publishedAt  DateTime?
 
   @@index([status])
   @@index([featured])
+  @@map("Project")
 }
 
-model ProjectImage {
+model ProductImage {
   id             String   @id @default(uuid()) @db.Uuid
-  projectId      String   @db.Uuid
-  project        Project  @relation("ProjectImages", fields: [projectId], references: [id], onDelete: Cascade)
-  coveredProject Project? @relation("ProjectCoverImage")
+  productId      String   @db.Uuid @map("projectId")
+  product        Product  @relation("ProductImages", fields: [productId], references: [id], onDelete: Cascade)
+  coveredProduct Product? @relation("ProductCoverImage")
   url            String
   storageKey     String
   originalName   String?
@@ -75,5 +77,6 @@ model ProjectImage {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@index([projectId])
+  @@index([productId])
+  @@map("ProjectImage")
 }

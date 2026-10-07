@@ -18,8 +18,8 @@ async function bootstrap() {
   );
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Artist Portfolio API')
-    .setDescription('Portfolio public API and simple JWT-protected admin API.')
+    .setTitle('Mistik World API')
+    .setDescription('Product catalog public API and JWT-protected admin API.')
     .setVersion('0.1.0')
     .addBearerAuth()
     .build();

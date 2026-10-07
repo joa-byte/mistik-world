@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectStatus } from '@prisma/client';
+import { ProductStatus } from '@prisma/client';
 import {
   ArrayUnique,
   IsArray,
@@ -8,11 +8,10 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  Max,
   Min,
 } from 'class-validator';
 
-export class CreateProjectDto {
+export class CreateProductDto {
   @IsString()
   title: string;
 
@@ -31,13 +30,6 @@ export class CreateProjectDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(9999)
-  year?: number;
-
   @ApiPropertyOptional({ description: 'Price in ARS, stored as whole pesos.' })
   @IsOptional()
   @IsInt()
@@ -55,10 +47,10 @@ export class CreateProjectDto {
   @Min(0, { each: true })
   sizes?: number[];
 
-  @ApiPropertyOptional({ enum: ProjectStatus })
+  @ApiPropertyOptional({ enum: ProductStatus })
   @IsOptional()
-  @IsEnum(ProjectStatus)
-  status?: ProjectStatus;
+  @IsEnum(ProductStatus)
+  status?: ProductStatus;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()

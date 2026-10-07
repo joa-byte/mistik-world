@@ -1,37 +1,42 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService, UploadFile } from '../storage/storage.service';
-import { CreateProjectImageDto } from './dto/create-project-image.dto';
-import { UpdateProjectImageDto } from './dto/update-project-image.dto';
+import { CreateProductImageDto } from './dto/create-product-image.dto';
+import { UpdateProductImageDto } from './dto/update-product-image.dto';
 
 @Injectable()
-export class ProjectImagesService {
-  private readonly logger = new Logger(ProjectImagesService.name);
+export class ProductImagesService {
+  private readonly logger = new Logger(ProductImagesService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
   ) {}
 
-  async findByProject(projectId: string) {
-    await this.ensureProjectExists(projectId);
+  async findByProduct(productId: string) {
+    await this.ensureProductExists(productId);
 
-    return this.prisma.projectImage.findMany({
-      where: { projectId },
+    return this.prisma.productImage.findMany({
+      where: { productId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
   async create(
-    projectId: string,
+    productId: string,
     file: UploadFile,
-    dto: CreateProjectImageDto,
+    dto: CreateProductImageDto,
   ) {
-    await this.ensureProjectExists(projectId);
+    await this.ensureProductExists(productId);
 
     let storedFile;
     try {
-      storedFile = await this.storageService.upload(file, projectId);
+      storedFile = await this.storageService.upload(file, productId);
     } catch (err) {
       const error = err as Error;
       this.logger.error(`Failed to upload file to storage: ${error.message}`);
@@ -40,9 +45,9 @@ export class ProjectImagesService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const image = await tx.projectImage.create({
+        const image = await tx.productImage.create({
           data: {
-            projectId,
+            productId,
             url: storedFile.url,
             storageKey: storedFile.storageKey,
             originalName: storedFile.originalName,
@@ -55,14 +60,14 @@ export class ProjectImagesService {
           },
         });
 
-        const project = await tx.project.findUnique({
-          where: { id: projectId },
+        const product = await tx.product.findUnique({
+          where: { id: productId },
           select: { coverImageId: true },
         });
 
-        if (!project?.coverImageId) {
-          await tx.project.update({
-            where: { id: projectId },
+        if (!product?.coverImageId) {
+          await tx.product.update({
+            where: { id: productId },
             data: { coverImageId: image.id },
           });
         }
@@ -74,7 +79,7 @@ export class ProjectImagesService {
       this.logger.error(
         `Database transaction failed, attempting rollback: ${error.message}`,
       );
-      // Rollback: eliminar archivo del storage si la BD falla
+
       try {
         await this.storageService.delete(storedFile.storageKey);
         this.logger.debug(`Rolled back uploaded file: ${storedFile.storageKey}`);
@@ -84,16 +89,17 @@ export class ProjectImagesService {
           `Failed to rollback file upload: ${deleteError.message}`,
         );
       }
+
       throw new InternalServerErrorException(
-        'Failed to create project image record',
+        'Failed to create product image record',
       );
     }
   }
 
-  async update(id: string, dto: UpdateProjectImageDto) {
+  async update(id: string, dto: UpdateProductImageDto) {
     await this.ensureImageExists(id);
 
-    return this.prisma.projectImage.update({
+    return this.prisma.productImage.update({
       where: { id },
       data: dto,
     });
@@ -104,22 +110,21 @@ export class ProjectImagesService {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        const project = await tx.project.findUnique({
-          where: { id: image.projectId },
+        const product = await tx.product.findUnique({
+          where: { id: image.productId },
           select: { coverImageId: true },
         });
 
-        if (project?.coverImageId === id) {
-          await tx.project.update({
-            where: { id: image.projectId },
+        if (product?.coverImageId === id) {
+          await tx.product.update({
+            where: { id: image.productId },
             data: { coverImageId: null },
           });
         }
 
-        await tx.projectImage.delete({ where: { id } });
+        await tx.productImage.delete({ where: { id } });
       });
 
-      // Eliminar del storage después de que la BD confirme
       try {
         await this.storageService.delete(image.storageKey);
       } catch (err) {
@@ -127,7 +132,6 @@ export class ProjectImagesService {
         this.logger.error(
           `Failed to delete file from storage: ${error.message}`,
         );
-        // No lanzar error aquí, la imagen ya fue eliminada de la BD
       }
 
       return { deleted: true };
@@ -138,22 +142,22 @@ export class ProjectImagesService {
     }
   }
 
-  private async ensureProjectExists(projectId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
+  private async ensureProductExists(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
       select: { id: true },
     });
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
   }
 
   private async ensureImageExists(id: string) {
-    const image = await this.prisma.projectImage.findUnique({ where: { id } });
+    const image = await this.prisma.productImage.findUnique({ where: { id } });
 
     if (!image) {
-      throw new NotFoundException('Project image not found');
+      throw new NotFoundException('Product image not found');
     }
 
     return image;

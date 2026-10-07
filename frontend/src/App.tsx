@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
-import { fetchPublishedProjects } from './api/projects';
-import { ProjectsCarousel } from './components/ProjectsCarousel';
-import type { Project } from './types/project';
+import { fetchPublishedProducts } from './api/products';
+import { ProductsCarousel } from './components/ProductsCarousel';
+import type { Product } from './types/product';
 
-type ProjectsState =
+type ProductsState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; projects: Project[] };
+  | { status: 'ready'; products: Product[] };
 
 export default function App() {
-  const [state, setState] = useState<ProjectsState>({ status: 'loading' });
+  const [state, setState] = useState<ProductsState>({ status: 'loading' });
 
   useEffect(() => {
     let isMounted = true;
 
-    fetchPublishedProjects()
-      .then((projects) => {
+    fetchPublishedProducts()
+      .then((products) => {
         if (isMounted) {
-          setState({ status: 'ready', projects });
+          setState({ status: 'ready', products });
         }
       })
       .catch((error: unknown) => {
@@ -25,7 +25,7 @@ export default function App() {
           setState({
             status: 'error',
             message:
-              error instanceof Error ? error.message : 'Could not load projects',
+              error instanceof Error ? error.message : 'Could not load products',
           });
         }
       });
@@ -36,16 +36,16 @@ export default function App() {
   }, []);
 
   if (state.status === 'loading') {
-    return <main className="screen-state">Loading projects...</main>;
+    return <main className="screen-state">Loading products...</main>;
   }
 
   if (state.status === 'error') {
     return <main className="screen-state">{state.message}</main>;
   }
 
-  if (state.projects.length === 0) {
-    return <main className="screen-state">No published projects yet.</main>;
+  if (state.products.length === 0) {
+    return <main className="screen-state">No published products yet.</main>;
   }
 
-  return <ProjectsCarousel projects={state.projects} />;
+  return <ProductsCarousel products={state.products} />;
 }
