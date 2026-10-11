@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductStatus } from '@prisma/client';
 import {
   ArrayUnique,
@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 
 export class CreateProductDto {
+  @ApiProperty({ example: 'Anillo Dos' })
   @IsString()
   title: string;
 
