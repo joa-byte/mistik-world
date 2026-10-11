@@ -649,6 +649,291 @@ function renderCatalogCard(product: Product, productUrlTemplate: string) {
   `;
 }
 
+
+const cartStyles = `
+  :host {
+    display: block;
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+    --mistik-red: #ff1919;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .cart {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .cart-back {
+    display: inline-block;
+    margin-bottom: 34px;
+    padding: 5px 18px;
+    border: 1px solid #111;
+    color: #111;
+    text-decoration: none;
+    font-size: 16px;
+  }
+
+  .cart-title {
+    margin: 0 0 42px;
+    text-align: center;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 1;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .cart-items {
+    display: grid;
+    gap: 24px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: 136px minmax(0, 1fr) auto;
+    gap: 36px;
+    align-items: center;
+  }
+
+  .cart-item__image {
+    width: 136px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f2f2f2;
+  }
+
+  .cart-item__image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .cart-item__title {
+    margin: 0 0 6px;
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.05;
+    font-weight: 700;
+  }
+
+  .cart-item__price {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  .cart-item__quantity {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  .cart-item__remove {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .cart-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 76px;
+    color: var(--mistik-red);
+    font-size: clamp(36px, 5vw, 54px);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .cart-summary__total {
+    text-align: right;
+  }
+
+  .cart-checkout {
+    width: 100%;
+    min-height: 66px;
+    margin-top: 20px;
+    border: 0;
+    background: var(--mistik-red);
+    color: #fff;
+    cursor: pointer;
+    font-size: clamp(28px, 4vw, 40px);
+  }
+
+  .cart-empty {
+    padding: 80px 0;
+    text-align: center;
+    font-size: 20px;
+  }
+
+  @media (max-width: 640px) {
+    .cart-item {
+      grid-template-columns: 96px minmax(0, 1fr) auto;
+      gap: 16px;
+    }
+
+    .cart-item__image {
+      width: 96px;
+    }
+
+    .cart-item__title {
+      font-size: 22px;
+    }
+
+    .cart-item__price {
+      font-size: 18px;
+    }
+
+    .cart-summary {
+      gap: 18px;
+      margin-top: 48px;
+      font-size: 32px;
+    }
+  }
+`;
+
+function writeCart(cart: CartItem[]) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  window.dispatchEvent(
+    new CustomEvent('mistik:cart-updated', {
+      detail: {
+        items: cart,
+        count: cart.reduce((total, entry) => total + entry.quantity, 0),
+      },
+    }),
+  );
+}
+
+function cartItemKey(item: CartItem) {
+  return `${item.productId}::${item.size ?? ''}`;
+}
+
+function mountCart(element: HTMLElement) {
+  const catalogUrl = element.dataset.catalogUrl || '/productos';
+  const checkoutUrl = element.dataset.checkoutUrl;
+  const root = element.shadowRoot ?? element.attachShadow({ mode: 'open' });
+
+  const render = () => {
+    const cart = readCart();
+
+    if (!cart.length) {
+      root.innerHTML = `
+        <style>${cartStyles}</style>
+        <section class="cart">
+          <a class="cart-back" href="${escapeHtml(catalogUrl)}">Volver a ver todos los productos</a>
+          <h1 class="cart-title">Tu carrito está vacío</h1>
+          <div class="cart-empty">Todavía no agregaste productos.</div>
+        </section>
+      `;
+      return;
+    }
+
+    const total = cart.reduce(
+      (sum, item) => sum + (item.price ?? 0) * item.quantity,
+      0,
+    );
+
+    root.innerHTML = `
+      <style>${cartStyles}</style>
+      <section class="cart">
+        <a class="cart-back" href="${escapeHtml(catalogUrl)}">Volver a ver todos los productos</a>
+        <h1 class="cart-title">Hasta ahora tu carrito se ve así</h1>
+
+        <div class="cart-items">
+          ${cart
+            .map(
+              (item) => `
+                <article class="cart-item">
+                  <div class="cart-item__image">
+                    ${
+                      item.imageUrl
+                        ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.title)}">`
+                        : ''
+                    }
+                  </div>
+
+                  <div>
+                    <h2 class="cart-item__title">
+                      ${escapeHtml(item.title)}
+                      ${
+                        item.size !== null
+                          ? ` - Talle ${escapeHtml(item.size)}`
+                          : ''
+                      }
+                    </h2>
+                    <p class="cart-item__price">${escapeHtml(
+                      item.price === null
+                        ? 'Consultar'
+                        : money.format(item.price * item.quantity),
+                    )}</p>
+                    ${
+                      item.quantity > 1
+                        ? `<div class="cart-item__quantity">Cantidad: ${item.quantity}</div>`
+                        : ''
+                    }
+                  </div>
+
+                  <button
+                    class="cart-item__remove"
+                    type="button"
+                    aria-label="Quitar ${escapeHtml(item.title)} del carrito"
+                    data-cart-key="${escapeHtml(cartItemKey(item))}"
+                  >×</button>
+                </article>
+              `,
+            )
+            .join('')}
+        </div>
+
+        <div class="cart-summary">
+          <span>Total</span>
+          <span class="cart-summary__total">${escapeHtml(money.format(total))}</span>
+        </div>
+
+        <button class="cart-checkout" type="button">Comprar</button>
+      </section>
+    `;
+
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-cart-key]')
+      .forEach((button) => {
+        button.addEventListener('click', () => {
+          const key = button.dataset.cartKey;
+          const nextCart = readCart().filter((item) => cartItemKey(item) !== key);
+          writeCart(nextCart);
+          render();
+        });
+      });
+
+    root
+      .querySelector<HTMLButtonElement>('.cart-checkout')
+      ?.addEventListener('click', () => {
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+          return;
+        }
+
+        window.dispatchEvent(
+          new CustomEvent('mistik:checkout', {
+            detail: { items: readCart(), total },
+          }),
+        );
+      });
+  };
+
+  render();
+
+  const refresh = () => render();
+  window.addEventListener('mistik:cart-updated', refresh);
+  window.addEventListener('storage', (event) => {
+    if (event.key === CART_KEY) refresh();
+  });
+}
+
 async function mountCatalog(element: HTMLElement) {
   const apiUrl = element.dataset.apiUrl?.replace(/\/$/, '');
   const productUrlTemplate =
@@ -692,6 +977,10 @@ function mountAll() {
   document
     .querySelectorAll<HTMLElement>('[data-mistik-catalog]')
     .forEach((element) => void mountCatalog(element));
+
+  document
+    .querySelectorAll<HTMLElement>('[data-mistik-cart]')
+    .forEach((element) => mountCart(element));
 }
 
 if (document.readyState === 'loading') {
