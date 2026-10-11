@@ -11,7 +11,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IdParamDto } from '../common/dto/id-param.dto';
 import { ProductIdParamDto } from '../common/dto/product-id-param.dto';
@@ -35,6 +40,24 @@ export class ProductImagesController {
   @Post('admin/products/:productId/images')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        alt: {
+          type: 'string',
+        },
+        caption: {
+          type: 'string',
+        },
+      },
+    },
+  })
   create(
     @Param() params: ProductIdParamDto,
     @UploadedFile() file: UploadFile,
