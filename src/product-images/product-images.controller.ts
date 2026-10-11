@@ -23,6 +23,7 @@ import { ProductIdParamDto } from '../common/dto/product-id-param.dto';
 import { UploadFile } from '../storage/storage.service';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { UpdateProductImageDto } from './dto/update-product-image.dto';
+import { UploadProductImageDto } from './dto/upload-product-image.dto';
 import { ProductImagesService } from './product-images.service';
 
 @ApiTags('Product Images')
@@ -40,24 +41,7 @@ export class ProductImagesController {
   @Post('admin/products/:productId/images')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['file'],
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-        alt: {
-          type: 'string',
-        },
-        caption: {
-          type: 'string',
-        },
-      },
-    },
-  })
+  @ApiBody({ type: UploadProductImageDto })
   create(
     @Param() params: ProductIdParamDto,
     @UploadedFile() file: UploadFile,
