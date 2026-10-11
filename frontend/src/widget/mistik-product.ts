@@ -287,8 +287,23 @@ function escapeHtml(value: string | number | null | undefined) {
 }
 
 function joinProductUrl(baseUrl: string, slug: string) {
+  const encodedSlug = encodeURIComponent(slug);
+
+  if (baseUrl.includes('{slug}')) {
+    return baseUrl.replace('{slug}', encodedSlug);
+  }
+
+  if (baseUrl.endsWith('=')) {
+    return `${baseUrl}${encodedSlug}`;
+  }
+
   const normalized = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  return `${normalized}${encodeURIComponent(slug)}`;
+  return `${normalized}${encodedSlug}`;
+}
+
+function slugFromLocation() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('product') ?? params.get('slug');
 }
 
 function readCart(): CartItem[] {
@@ -354,10 +369,13 @@ function renderCard(product: Product, baseUrl: string) {
 }
 
 async function mountProduct(element: HTMLElement) {
-  const slug = element.dataset.mistikProduct;
+  const slug = element.dataset.mistikProduct || slugFromLocation();
   const apiUrl = element.dataset.apiUrl?.replace(/\/$/, '');
   const catalogUrl = element.dataset.catalogUrl || '/';
-  const productBaseUrl = element.dataset.productBaseUrl || '/products/';
+  const productBaseUrl =
+    element.dataset.productUrlTemplate ||
+    element.dataset.productBaseUrl ||
+    '/products/';
 
   if (!slug || !apiUrl) {
     element.textContent =
@@ -530,10 +548,150 @@ async function mountProduct(element: HTMLElement) {
   }
 }
 
+
+const catalogStyles = `
+  :host {
+    display: block;
+    color: #ff1919;
+    font-family: Arial, Helvetica, sans-serif;
+    --mistik-red: #ff1919;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .catalog-state {
+    min-height: 240px;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+  }
+
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 74px;
+    row-gap: 58px;
+  }
+
+  .catalog-card {
+    color: var(--mistik-red);
+    text-decoration: none;
+  }
+
+  .catalog-image {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f2f2f2;
+  }
+
+  .catalog-image img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .catalog-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding-top: 12px;
+    font-size: 16px;
+    line-height: 1.15;
+  }
+
+  .catalog-price {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 800px) {
+    .catalog-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 28px 18px;
+    }
+
+    .catalog-meta {
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .catalog-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+`;
+
+function renderCatalogCard(product: Product, productUrlTemplate: string) {
+  const image = product.coverImage;
+  return `
+    <a
+      class="catalog-card"
+      href="${escapeHtml(joinProductUrl(productUrlTemplate, product.slug))}"
+      data-product-slug="${escapeHtml(product.slug)}"
+    >
+      <div class="catalog-image">
+        ${
+          image
+            ? `<img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt ?? product.title)}">`
+            : ''
+        }
+      </div>
+      <div class="catalog-meta">
+        <span>${escapeHtml(product.title)}</span>
+        <span class="catalog-price">${escapeHtml(
+          product.price === null ? 'Consultar' : money.format(product.price),
+        )}</span>
+      </div>
+    </a>
+  `;
+}
+
+async function mountCatalog(element: HTMLElement) {
+  const apiUrl = element.dataset.apiUrl?.replace(/\/$/, '');
+  const productUrlTemplate =
+    element.dataset.productUrlTemplate || '/producto?product={slug}';
+
+  if (!apiUrl) {
+    element.textContent = 'Falta configurar data-api-url en el catálogo.';
+    return;
+  }
+
+  const root = element.shadowRoot ?? element.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${catalogStyles}</style><div class="catalog-state">Cargando...</div>`;
+
+  try {
+    const response = await fetch(`${apiUrl}/public/products`);
+
+    if (!response.ok) {
+      throw new Error('No se pudieron cargar los productos.');
+    }
+
+    const products = (await response.json()) as Product[];
+
+    root.innerHTML = `
+      <style>${catalogStyles}</style>
+      <section class="catalog-grid">
+        ${products.map((product) => renderCatalogCard(product, productUrlTemplate)).join('')}
+      </section>
+    `;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'No se pudieron cargar los productos.';
+    root.innerHTML = `<style>${catalogStyles}</style><div class="catalog-state">${escapeHtml(message)}</div>`;
+  }
+}
+
 function mountAll() {
   document
     .querySelectorAll<HTMLElement>('[data-mistik-product]')
     .forEach((element) => void mountProduct(element));
+
+  document
+    .querySelectorAll<HTMLElement>('[data-mistik-catalog]')
+    .forEach((element) => void mountCatalog(element));
 }
 
 if (document.readyState === 'loading') {
