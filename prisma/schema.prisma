@@ -45,7 +45,7 @@ model Product {
   subtitle     String?
   description  String?
   price        Int?
-  sizes        Int[]          @default([])
+  sizes        String[]       @default([])
   status       ProductStatus  @default(DRAFT)
   featured     Boolean        @default(false)
   coverImageId String?        @unique @db.Uuid
