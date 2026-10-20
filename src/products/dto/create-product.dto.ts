@@ -38,15 +38,14 @@ export class CreateProductDto {
   price?: number;
 
   @ApiPropertyOptional({
-    type: [Number],
-    description: 'Available ring sizes, for example [11, 12, 13].',
+    type: [String],
+    description: 'Available sizes, for example ["11", "12", "13"] or ["Único"].',
   })
   @IsOptional()
   @IsArray()
   @ArrayUnique()
-  @IsInt({ each: true })
-  @Min(0, { each: true })
-  sizes?: number[];
+  @IsString({ each: true })
+  sizes?: string[];
 
   @ApiPropertyOptional({ enum: ProductStatus })
   @IsOptional()
