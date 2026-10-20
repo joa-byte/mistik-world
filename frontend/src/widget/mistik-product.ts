@@ -11,7 +11,7 @@ type Product = {
   subtitle: string | null;
   description: string | null;
   price: number | null;
-  sizes: number[];
+  sizes: string[];
   coverImage: ProductImage | null;
   images?: ProductImage[];
 };
@@ -21,7 +21,7 @@ type CartItem = {
   slug: string;
   title: string;
   price: number | null;
-  size: number | null;
+  size: string | null;
   quantity: number;
   imageUrl: string | null;
 };
@@ -512,7 +512,7 @@ async function mountProduct(element: HTMLElement) {
 
     root.querySelectorAll<HTMLButtonElement>('.size').forEach((button) => {
       button.addEventListener('click', () => {
-        selectedSize = Number(button.dataset.size);
+        selectedSize = button.dataset.size ?? null;
         root.querySelectorAll<HTMLButtonElement>('.size').forEach((candidate) => {
           candidate.setAttribute(
             'aria-pressed',
